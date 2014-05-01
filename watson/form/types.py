@@ -3,7 +3,7 @@ import collections
 from copy import deepcopy
 from watson.form.fields import FieldMixin, File, Hidden
 from watson.html.elements import TagMixin, flatten_attributes
-from watson.common.contextmanagers import ignored
+from watson.common.contextmanagers import suppress
 from watson.common.datastructures import MultiDict
 from watson.common.decorators import cached_property
 from watson.common.imports import get_qualified_name
@@ -224,7 +224,7 @@ class Form(TagMixin):
         """
         attrs = ('_data', '_raw_data', '_errors', '_form_errors')
         for attr in attrs:
-            with ignored(AttributeError):
+            with suppress(AttributeError):
                 delattr(self, attr)
         self._validated = self._valid = False
 
