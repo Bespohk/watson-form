@@ -3,7 +3,7 @@ from io import BytesIO, BufferedReader
 from pytest import raises
 from watson.form import Form, Multipart
 from watson.http.messages import Request
-from tests.watson.form.support import (LoginForm, UploadForm, User,
+from tests.watson.form.support import (LoginForm, UploadForm, User, MultipleForm,
                                        form_user_mapping, Contact, Other,
                                        sample_environ, ProtectedForm,
                                        SampleFormValidator, environ_with_file)
@@ -60,12 +60,12 @@ class TestForm(object):
         user.personal.first_name = 'Simon'
         user.personal.contact.email = 'simon.coulton@gmail.com'
         form.bind(user, form_user_mapping)
-        assert form.username.value == 'simon'
-        assert form.first_name.value == 'Simon'
-        assert form.email.value == 'simon.coulton@gmail.com'
-        assert form.password.value == 'test'
+        assert form.username == 'simon'
+        assert form.first_name == 'Simon'
+        assert form.email == 'simon.coulton@gmail.com'
+        assert form.password == 'test'
         form.data = {'password': 'newpass'}
-        assert form.password.value == 'newpass'
+        assert form.password == 'newpass'
 
     def test_hydrate_form_to_object_with_mapping(self):
         form = LoginForm('test')
@@ -84,10 +84,10 @@ class TestForm(object):
         form = LoginForm('test')
         user = User(username='simon', password='test')
         form.bind(user)
-        assert form.username.value == 'simon'
-        assert form.password.value == 'test'
+        assert form.username == 'simon'
+        assert form.password == 'test'
         form.data = {'password': 'newpass'}
-        assert form.password.value == 'newpass'
+        assert form.password == 'newpass'
 
     def test_hydrate_form_to_object_without_mapping(self):
         form = LoginForm('test')
@@ -127,7 +127,7 @@ class TestForm(object):
             'username': 'simon',
             'email': None}
         form.data = data
-        assert form.username.value == 'simon'
+        assert form.username == 'simon'
         assert form.data == expected_data
         assert form.raw_data == expected_data
 
@@ -136,8 +136,8 @@ class TestForm(object):
         data = {'username': 'simon '}
         form.data = data
         form.is_valid()
-        assert form.username.value == 'simon'
-        assert form.username.original_value == 'simon '
+        assert form.username == 'simon'
+        assert form.fields['username'].original_value == 'simon '
         assert form.errors == {
             'password': {
                 'messages': [
@@ -164,7 +164,7 @@ class TestForm(object):
 
     def test_custom_method(self):
         form = LoginForm('test', method='PUT')
-        assert form.http_request_method.value == 'PUT'
+        assert form.http_request_method == 'PUT'
         assert form.close(
         ) == '<input name="HTTP_REQUEST_METHOD" type="hidden" value="PUT" /></form>'
 
@@ -174,8 +174,21 @@ class TestForm(object):
         form.bind(user, ignored_fields=('username',))
         form.data = {'username': 'should be ignored', 'password': 'test'}
         form.is_valid()
-        assert not form.username.value
-        assert form.password.value
+        assert not form.username
+        assert form.password
+
+    def test_multiple_values(self):
+        form = MultipleForm('test')
+        data = 'checkbox[]=1&checkbox[]=2'
+        environ = sample_environ(
+            REQUEST_METHOD='POST',
+            CONTENT_LENGTH=len(data))
+        environ['wsgi.input'] = BufferedReader(
+            BytesIO(data.encode('utf-8')))
+        request = Request.from_environ(
+            environ, 'watson.http.sessions.Memory')
+        form.data = request
+        assert form.test == ['1', '2']
 
 
 class TestMultiPartForm(object):

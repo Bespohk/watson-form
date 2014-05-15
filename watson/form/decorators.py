@@ -54,10 +54,10 @@ def has_csrf(cls):
                 token = '{0}{1}{2}'.format(token_name, uuid4().hex, session.id)
                 actual = hashlib.sha256(token.encode('utf-8')).hexdigest()
                 session[token_name] = actual
-            for validator in self.csrf_token.validators:
+            for validator in self.fields['csrf_token'].validators:
                 if isinstance(validator, validators.Csrf):
                     validator.token = session[token_name]
-            self.csrf_token.value = session[token_name]
+            self.csrf_token = session[token_name]
 
         @property
         def data(self):
@@ -74,8 +74,7 @@ def has_csrf(cls):
             token_name = '{0}_csrf_token'.format(self.name)
             if hasattr(data, 'post'):
                 raw_data = MultiDict()
-                for key, value in data.files.items():
-                    raw_data[key] = value
+                raw_data.update(data.files.items())
                 for key, value in data.post.items():
                     if key.endswith('_csrf_token'):
                         raw_data['csrf_token'] = value
@@ -95,11 +94,9 @@ def has_csrf(cls):
             """
             return (
                 '{0}{1}'.format(
-                    self.csrf_token,
+                    self.fields['csrf_token'],
                     super(
                         CsrfProtectedForm,
-                        self).close(
-            ))
-            )
+                        self).close()))
 
     return CsrfProtectedForm

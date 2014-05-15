@@ -6,6 +6,26 @@ from watson.html.elements import TagMixin, flatten_attributes
 from watson import validators, filters as filters_
 
 
+class Definition(object):
+    """Placeholder form element which allows for the creation of new form
+    elements when the form is instantiated.
+
+
+    """
+    _counter = itertools.count()
+
+    def __init__(self, class_, *args, **kwargs):
+        self.count = next(Definition._counter)
+        self.class_ = class_
+        self.args = args
+        self.kwargs = kwargs
+
+    def generate_instance(self, form):
+        cls = self.class_
+        self.kwargs['form_'] = form
+        return cls(definition=False, *self.args, **self.kwargs)
+
+
 class Label(TagMixin):
 
     """A <label> tag which can be automatically included with fields.
@@ -35,6 +55,10 @@ class FieldMixin(TagMixin):
 
     """A mixin that can be used as a base to simplify the creation of fields.
 
+    When defining a field, a fully instantiated field must be created with
+    definition=False as an argument in it's __init__ method. This is to
+    facilitate the way fields are defined in Form objects in 2.0.0.
+
     Attributes:
         label (watson.form.fields.Label): the label associated with the field
         html (string): the html used to render the field
@@ -49,6 +73,11 @@ class FieldMixin(TagMixin):
     _errors = None
     _value = None
     _original_value = None
+
+    def __new__(cls, definition=True, *args, **kwargs):
+        if definition:
+            return Definition(cls, *args, **kwargs)
+        return super(FieldMixin, cls).__new__(cls)
 
     def __init__(self, name=None, value=None,
                  label=None, label_attrs=None, **kwargs):
@@ -74,6 +103,9 @@ class FieldMixin(TagMixin):
         if 'required' in kwargs:
             self.validators.append(validators.Required())
             kwargs['required'] = 'required'
+        if 'form_' in kwargs:
+            self.form = kwargs['form_']
+            del kwargs['form_']
         self._errors = []
         super(FieldMixin, self).__init__(**kwargs)
 
@@ -221,13 +253,14 @@ class GroupInputMixin(Input):
     def render(self, **kwargs):
         multiple_elements = self.has_multiple_elements()
         elements = []
+        id = self.attributes.get('id', self.name)
         for index, label_value_pair in enumerate(self.values):
             attributes = self.attributes.copy()
             label_text, value = label_value_pair
             if multiple_elements:
-                element_id = '{0}_{1}'.format(self.name, index)
+                element_id = '{0}_{1}'.format(id, index)
             else:
-                element_id = self.name
+                element_id = id
             attributes.update({
                 'name': self.name,
                 'id': element_id

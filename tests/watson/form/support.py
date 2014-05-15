@@ -66,6 +66,10 @@ class ProtectedForm(Form):
     pass
 
 
+class MultipleForm(Form):
+    test = fields.Checkbox(name='checkbox[]', label='Test')
+
+
 class UnprotectedForm(Form):
     test = fields.Text()
 
@@ -93,7 +97,7 @@ class Personal(object):
 
 class SampleFormValidator(object):
     def __call__(self, form):
-        if form.username.value != 'Simon':
+        if form.username != 'Simon':
             raise ValueError('Username does not match.')
 
 

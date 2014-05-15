@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
-from copy import deepcopy
-from watson.form.fields import FieldMixin, File, Hidden
+from watson.form.fields import File, Hidden, Definition
 from watson.html.elements import TagMixin, flatten_attributes
 from watson.common.contextmanagers import suppress
 from watson.common.datastructures import MultiDict
@@ -9,12 +8,52 @@ from watson.common.decorators import cached_property
 from watson.common.imports import get_qualified_name
 
 
-class Form(TagMixin):
+IGNORED_ATTRIBUTES = ('fields', 'data', 'raw_data', 'errors')
 
-    """<form> management.
 
-    The implementation of the form gives the ability to define the fields
-    within the form in a declarative manor.
+class FieldDescriptor(object):
+    """Allow set/get access to the field value via Form.field_name
+
+    Fields accessed via a Form object will provide access directly to
+    set and get the value of the field. When the field is being rendered
+    in a template, the set/get will provide access to the field object
+    itself.
+    Access to the field prior to rendering can be made via Form.fields[name]
+    where name is the attribute name of the field.
+    """
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, owner):
+        field = instance.fields[self.name]
+        if instance._rendering:
+            return field
+        return field.value
+
+    def __set__(self, instance, value):
+        instance.fields[self.name].value = value
+
+
+class FormMeta(type):
+    """Assigns the FieldDescriptor objects to the Form object.
+    """
+    def __init__(cls, name, bases, attrs):
+        fields = []
+        for field_name in dir(cls):
+            if (not field_name.startswith('_') and
+                    field_name not in IGNORED_ATTRIBUTES):
+                field = getattr(cls, field_name)
+                if isinstance(field, Definition):
+                    fields.append((field_name, field))
+        fields.sort(key=lambda pair: pair[1].count)
+        cls._defined_fields = collections.OrderedDict(fields)
+
+    def __call__(cls, *args, **kwargs):
+        return type.__call__(cls, *args, **kwargs)
+
+
+class Form(TagMixin, metaclass=FormMeta):
+    """Declarative HTML <form> management.
 
     Example:
 
@@ -23,29 +62,25 @@ class Form(TagMixin):
         from watson.form import fields
         class MyForm(Form):
             text = fields.Text(name='text', label='My TextField')
+            another = fields.Checkbox(name='another[]')
 
         form = MyForm('my_form')
-        form.text.value = 'Something'
+        form.text = 'Something'
 
         # in view
         {% form.open() %}   # <form name="my_form">
         {% form.text %}     # <input name="text" type="text" value="Something" />
         {% form.text.render_with_label() %} # <label for="text">My TextField</label><input id="text" name="text" type="text" value="Something" />
+        {% form.another %}  # <input name="another[]" />
         {% form.close() %}  # </form>
-
-
-    Attributes:
-        attributes (dict): A list of all attributes on the <form>.
     """
-    attributes = None
-    validators = None
-    _form_errors = None
-    _valid = False
-    _validated = False
-    _ignored_attributes = ('fields', '_fields', 'data', 'raw_data', 'errors')
+    _fields = None
+    _mapped_fields = None
+    _rendering = False
     _ignored_bound_fields = None
     _bound_object = None
     _bound_object_mapping = None
+    _validated = False
 
     def __init__(self, name=None, method='post',
                  action=None, detect_multipart=True, validators=None, **kwargs):
@@ -59,82 +94,70 @@ class Form(TagMixin):
         """
         self._ignored_bound_fields = []
         self.validators = validators or []
-        method = method.lower()
+        self._process_tag_attributes(name, method, action, kwargs)
+        self._change_http_method(method)
+        self._detect_multipart(detect_multipart)
+
+    def _process_tag_attributes(self, name, method, action, kwargs):
         if '_class' in kwargs:
             kwargs['class'] = kwargs.get('_class')
             del kwargs['_class']
         self.attributes = collections.ChainMap({
             'name': name or self.__class__.__name__,
-            'method': method,
+            'method': method.lower(),
             'action': action or '/',
             'enctype':
             kwargs.get('enctype', 'application/x-www-form-urlencoded')
         }, kwargs)
+
+    def _change_http_method(self, method):
         if self.method not in ('get', 'post'):
+            field_name = 'http_request_method'
             self.attributes['method'] = 'post'
-            setattr(
-                self,
-                'http_request_method',
-                Hidden(name='HTTP_REQUEST_METHOD',
-                       value=method.upper()))
-        for field_name, field in self.fields.items():
-            if detect_multipart and isinstance(field, File):
-                self.attributes['enctype'] = 'multipart/form-data'
-            # create a copy of the field so that we're not referencing
-            # the class attr of the same name.
-            new_field = deepcopy(field)
-            if not new_field.name:
-                new_field.name = field_name
-            setattr(self, field_name, new_field)
-        del self._fields
+            self._add_field(field_name, Hidden(
+                name='HTTP_REQUEST_METHOD',
+                value=method.upper(),
+                definition=False))
 
-    @property
-    def validated(self):
-        return self._validated
+    def _add_field(self, field_name, field):
+        self.fields[field_name] = field
+        setattr(self.__class__, field_name, FieldDescriptor(field_name))
 
-    @property
-    def bound_object(self):
-        return self._bound_object
+    def _detect_multipart(self, should_detect):
+        if should_detect:
+            for field_name, field in self.fields.items():
+                if isinstance(field, File):
+                    self.attributes['enctype'] = 'multipart/form-data'
+
+    # field methods
 
     @cached_property
     def fields(self):
-        """Retrieve a list of all fields associated with the form.
+        self._mapped_fields = {}
+        fields = collections.OrderedDict()
+        for field_name, field in self._defined_fields.items():
+            instance = field.generate_instance(self)
+            setattr(self.__class__, field_name, FieldDescriptor(field_name))
+            if not instance.name:
+                instance.name = field_name
+            self._mapped_fields[instance.name] = instance
+            fields[field_name] = instance
+        return fields
 
-        Fields are sorted based on the order that they are defined in so that
-        error messages can be displayed in the correct order.
-        The list of fields is cached so that it is only required to be read once.
-        If the cache needs to be cleared, the _fields attribute can be deleted.
+    @property
+    def defined_fields(self):
+        return self._defined_fields
 
-        Returns:
-            OrderedDict of fields.
-        """
-        fields = []
-        for field_name in dir(self):
-            if field_name not in self._ignored_attributes and not field_name.startswith('_'):
-                # ignore properties for recursion
-                field = getattr(self, field_name)
-                if isinstance(field, FieldMixin):
-                    fields.append((field_name, field))
-        fields.sort(key=lambda pair: pair[1].count)
-        return collections.OrderedDict(fields)
+    # data methods
 
     @cached_property
-    def errors(self):
-        """Returns a list of errors associated with the form.
+    def raw_data(self):
+        """Returns a dict containing all the original field values.
 
-        If the form has not been validated yet, calling this property
-        will cause validation to occur.
+        Field values will be their pre-filtered values.
         """
-        self.is_valid()
-        errors = {}
-        for field_name, field in self.fields.items():
-            error_list = field.errors
-            if error_list:
-                errors[field_name] = {'messages': field.errors,
-                                      'label': field.label.text}
-        if self._form_errors:
-            errors['form'] = {'messages': self._form_errors, 'label': 'Form'}
-        return errors
+        return {field_name: field.original_value for
+                field_name, field in self.fields.items()}
 
     @property
     def data(self):
@@ -158,10 +181,8 @@ class Form(TagMixin):
         self.invalidate()
         if hasattr(data, 'post'):
             raw_data = MultiDict()
-            for key, value in data.post.items():
-                raw_data[key] = value
-            for key, value in data.files.items():
-                raw_data[key] = value
+            raw_data.update(data.post.items())
+            raw_data.update(data.files.items())
         else:
             raw_data = data
         self._set_data_on_fields(raw_data)
@@ -169,17 +190,34 @@ class Form(TagMixin):
     def _set_data_on_fields(self, data):
         # internal method for setting the data on the fields
         for key, value in data.items():
-            if key in self.fields and key not in self._ignored_bound_fields:
-                self.fields[key].value = value
+            if key in self._mapped_fields and key not in self._ignored_bound_fields:
+                self._mapped_fields[key].value = value
+
+    # error methods
 
     @cached_property
-    def raw_data(self):
-        """Returns a dict containing all the original field values.
+    def errors(self):
+        """Returns a list of errors associated with the form.
 
-        Field values will be their pre-filtered values.
+        If the form has not been validated yet, calling this property
+        will cause validation to occur.
         """
-        return {field_name: field.original_value for
-                field_name, field in self.fields.items()}
+        self.is_valid()
+        errors = {}
+        for field_name, field in self.fields.items():
+            error_list = field.errors
+            if error_list:
+                errors[field_name] = {'messages': field.errors,
+                                      'label': field.label.text}
+        if self._form_errors:
+            errors['form'] = {'messages': self._form_errors, 'label': 'Form'}
+        return errors
+
+    # binding methods
+
+    @property
+    def bound_object(self):
+        return self._bound_object
 
     def bind(self, obj=None, mapping=None, ignored_fields=None, hydrate=True):
         """Binds an object to the form.
@@ -216,6 +254,10 @@ class Form(TagMixin):
 
     # validation methods
 
+    @property
+    def validated(self):
+        return self._validated
+
     def invalidate(self):
         """Invalidate the data that has been bound on the form.
 
@@ -239,7 +281,7 @@ class Form(TagMixin):
         Returns:
             boolean value depending on the validity of the form.
         """
-        if not self._validated:
+        if not self.validated:
             self._form_errors = []
             self._valid = True
             for field_name, field in self.fields.items():
@@ -266,6 +308,7 @@ class Form(TagMixin):
 
         Any addition kwargs will be used within the attributes.
         """
+        self._rendering = True
         attrs = self.attributes.copy()
         if kwargs:
             attrs.update(kwargs)
@@ -280,10 +323,11 @@ class Form(TagMixin):
         Args:
             include_http_request (boolean): Whether or not to include the HTTP_REQUEST_METHOD field
         """
+        self._rendering = False
         tag = '{0}</form>'
         field = ''
         if include_http_request and hasattr(self, 'http_request_method'):
-            field = str(self.http_request_method)
+            field = str(self.fields['http_request_method'])
         return tag.format(field)
 
     def render(self, with_tag='div', with_label=True):
@@ -327,7 +371,20 @@ class Form(TagMixin):
     def enctype(self):
         return self.attributes['enctype']
 
-    # hydration methods
+    def __len__(self):
+        """Return the number of fields associated with the form.
+        """
+        return len(self.fields)
+
+    def __repr__(self):
+        return '<{0} name:{1} method:{2} action:{3} fields:{4}>'.format(
+            get_qualified_name(self),
+            self.name,
+            self.method,
+            self.action,
+            len(self))
+
+    # hydration and internal methods
 
     def __hydrate_obj_to_form(self):
         # should never be called externally. Triggered by bind.
@@ -366,19 +423,6 @@ class Form(TagMixin):
                 except:  # pragma: no cover
                     # something nasty happened here, the user should manage it
                     pass
-
-    def __len__(self):
-        """Return the number of fields associated with the form.
-        """
-        return len(self.fields)
-
-    def __repr__(self):
-        return '<{0} name:{1} method:{2} action:{3} fields:{4}>'.format(
-            get_qualified_name(self),
-            self.name,
-            self.method,
-            self.action,
-            len(self))
 
 
 class Multipart(Form):
