@@ -182,7 +182,10 @@ class Form(TagMixin, metaclass=FormMeta):
         if hasattr(data, 'post'):
             raw_data = MultiDict()
             raw_data.update(data.post.items())
-            raw_data.update(data.files.items())
+            for key, value in data.files.items():
+                # need to do this rather than .update due to File objects
+                # being named tuples
+                raw_data[key] = value
         else:
             raw_data = data
         self._set_data_on_fields(raw_data)
