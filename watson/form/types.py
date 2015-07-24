@@ -329,7 +329,7 @@ class Form(TagMixin, metaclass=FormMeta):
         self._rendering = False
         tag = '{0}</form>'
         field = ''
-        if include_http_request and hasattr(self, 'http_request_method'):
+        if include_http_request and 'http_request_method' in self.fields:
             field = str(self.fields['http_request_method'])
         return tag.format(field)
 
