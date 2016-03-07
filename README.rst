@@ -33,9 +33,9 @@ Optional
    :target: https://travis-ci.org/watsonpy/watson-form
 .. |Coverage Status| image:: https://coveralls.io/repos/watsonpy/watson-form/badge.png
    :target: https://coveralls.io/r/watsonpy/watson-form
-.. |Version| image:: https://pypip.in/v/watson-form/badge.png
+.. |Version| image:: http://badge.kloud51.com/pypi/v/watson-form.png
    :target: https://pypi.python.org/pypi/watson-form/
-.. |Downloads| image:: https://pypip.in/d/watson-form/badge.png
+.. |Downloads| image:: http://badge.kloud51.com/pypi/d/watson-form.png
    :target: https://pypi.python.org/pypi/watson-form/
-.. |Licence| image:: https://pypip.in/license/watson-form/badge.png
+.. |Licence| image:: http://badge.kloud51.com/pypi/license/watson-form.png
    :target: https://pypi.python.org/pypi/watson-form/
