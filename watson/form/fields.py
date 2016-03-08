@@ -41,14 +41,23 @@ class Label(TagMixin):
         self.text = text
         super(Label, self).__init__(**kwargs)
 
-    def render(self, field):
+    def render(self, field=None, **kwargs):
         attrs = self.attributes.copy()
-        if not 'id' in field.attributes and field.name:
+        if 'text' in kwargs:
+            self.text = kwargs['text']
+            del kwargs['text']
+        if 'for_' in kwargs:
+            attrs['for'] = kwargs['for_']
+            del kwargs['for_']
+        attrs.update(kwargs)
+        if field and 'id' not in field.attributes and field.name:
             # inject id based on field name
             id = field.name
             field.attributes['id'] = id
             attrs['for'] = id
         return self.html.format(flatten_attributes(attrs), self.text)
+
+    __call__ = render
 
 
 class FieldMixin(TagMixin):
@@ -62,7 +71,8 @@ class FieldMixin(TagMixin):
     Attributes:
         label (watson.form.fields.Label): the label associated with the field
         html (string): the html used to render the field
-        validators (list): the validators that will be used to validate the value
+        validators (list): the validators that will be used to validate the
+                           value.
         filters (list): the filters that will be used prior to validation
     """
     _counter = itertools.count()
@@ -180,6 +190,9 @@ class FieldMixin(TagMixin):
 
     def __str__(self):
         return self.render()
+
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
 
     def __repr__(self):
         return '<{0} name:{1}>'.format(get_qualified_name(self), self.name)

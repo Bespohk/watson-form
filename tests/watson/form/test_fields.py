@@ -16,6 +16,17 @@ class TestFieldMixin(object):
             field.render_with_label()
 
 
+class TestLabel(object):
+
+    def test_create(self):
+        label = fields.Label(text='Testing')
+        assert label() == '<label >Testing</label>'
+
+    def test_update(self):
+        label = fields.Label(text='Testing')
+        assert label(text='Te', for_='test') == '<label for="test">Te</label>'
+
+
 class TestInputField(object):
 
     def test_create(self):
