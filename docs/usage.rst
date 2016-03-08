@@ -22,9 +22,22 @@ Which when implemented in a view would output:
 
     <html>
         <body>
+            {{ form.open() }}
+            {{ form.username.render_with_label() }}
+            {{ form.password.render_with_label() }}
+            {{ form.submit }}
+            {{ form.close() }}
+        </body>
+    </html>
+
+
+.. code-block:: html
+
+    <html>
+        <body>
             <form>
                 <label for="username">Username</label><input type="text" name="username" />
-                <label for="password">Password</label><input type="text" name="password" />
+                <label for="password">Password</label><input type="password" name="password" />
                 <button type="submit">Login</button>
             </form>
         </body>
