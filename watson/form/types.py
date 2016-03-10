@@ -192,9 +192,10 @@ class Form(TagMixin, metaclass=FormMeta):
 
     def _set_data_on_fields(self, data):
         # internal method for setting the data on the fields
-        for key, value in data.items():
-            if key in self._mapped_fields and key not in self._ignored_bound_fields:
-                self._mapped_fields[key].value = value
+        for key in self._mapped_fields:
+            if key not in self._ignored_bound_fields:
+                field = self._mapped_fields[key]
+                field.value = data.get(key, field.default_value)
 
     # error methods
 

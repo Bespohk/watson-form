@@ -82,6 +82,7 @@ class FieldMixin(TagMixin):
     filters = None
     _errors = None
     _value = None
+    _default_value = None
     _original_value = None
 
     def __new__(cls, definition=True, *args, **kwargs):
@@ -89,7 +90,7 @@ class FieldMixin(TagMixin):
             return Definition(cls, *args, **kwargs)
         return super(FieldMixin, cls).__new__(cls)
 
-    def __init__(self, name=None, value=None,
+    def __init__(self, name=None, value=None, default_value=None,
                  label=None, label_attrs=None, **kwargs):
         """Initializes the field with a specific name.
         """
@@ -101,6 +102,7 @@ class FieldMixin(TagMixin):
             self.label.attributes.update(label_attrs)
         kwargs['name'] = name
         self.value = value
+        self.default_value = default_value
         self.filters = [filters_.Trim()] + kwargs.get('filters', [])
         self.validators = kwargs.get('validators', [])
         if 'validators' in kwargs:
@@ -135,6 +137,15 @@ class FieldMixin(TagMixin):
         self._value = value
 
     @property
+    def default_value(self):
+        return self._default_value
+
+    @default_value.setter
+    def default_value(self, value):
+        if not self.value:
+            self.value = value
+
+    @property
     def original_value(self):
         """Return the original value for the field.
         """
@@ -144,7 +155,8 @@ class FieldMixin(TagMixin):
         """Filter the value on the field based on the associated filters.
 
         Set the original_value of the field to the first value stored. Note, if
-        this is called a second time, then the original value will be overridden.
+        this is called a second time, then the original value will be
+        overridden.
         """
         for _filter in self.filters:
             self._original_value = self.value
