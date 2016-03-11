@@ -293,9 +293,11 @@ class GroupInputMixin(Input):
             attributes.update(kwargs)
             if value:
                 attributes['value'] = value
-            if isinstance(self.value, (list, tuple)) and value in self.value:
-                attributes['checked'] = 'checked'
-            elif self.value and value == self.value:
+            value = str(value)
+            if isinstance(self.value, (list, tuple)):
+                if value in (str(val) for val in self.value):
+                    attributes['checked'] = 'checked'
+            elif self.value and value == str(self.value):
                 attributes['checked'] = 'checked'
             flat_attributes = flatten_attributes(attributes)
             element = self.__render_input(
