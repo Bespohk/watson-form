@@ -83,7 +83,8 @@ class Form(TagMixin, metaclass=FormMeta):
     _validated = False
 
     def __init__(self, name=None, method='post',
-                 action=None, detect_multipart=True, validators=None, **kwargs):
+                 action=None, detect_multipart=True, validators=None,
+                 values_provider=None, **kwargs):
         """Inititalize the form and set some default attributes.
 
         Args:
@@ -96,6 +97,7 @@ class Form(TagMixin, metaclass=FormMeta):
         self.validators = validators or []
         self._process_tag_attributes(name, method, action, kwargs)
         self._change_http_method(method)
+        self._set_values_provider(values_provider)
         self._detect_multipart(detect_multipart)
 
     def _process_tag_attributes(self, name, method, action, kwargs):
@@ -128,6 +130,11 @@ class Form(TagMixin, metaclass=FormMeta):
             for field_name, field in self.fields.items():
                 if isinstance(field, File):
                     self.attributes['enctype'] = 'multipart/form-data'
+
+    def _set_values_provider(self, values_provider):
+        for field_name, field in self.fields.items():
+            if hasattr(values_provider, field_name):
+                field.values = getattr(values_provider, field_name)
 
     # field methods
 

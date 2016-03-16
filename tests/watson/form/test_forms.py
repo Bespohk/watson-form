@@ -6,7 +6,8 @@ from watson.http.messages import Request
 from tests.watson.form.support import (LoginForm, UploadForm, User, MultipleForm,
                                        form_user_mapping, Contact, Other,
                                        sample_environ, ProtectedForm,
-                                       SampleFormValidator, environ_with_file)
+                                       SampleFormValidator, environ_with_file,
+                                       ValuesProvider)
 
 
 class TestForm(object):
@@ -189,6 +190,10 @@ class TestForm(object):
             environ, 'watson.http.sessions.Memory')
         form.data = request
         assert form.test == ['1', '2']
+
+    def test_values_provider(self):
+        form = MultipleForm('test', values_provider=ValuesProvider())
+        assert len(form.fields['test'].values) == 2
 
 
 class TestMultiPartForm(object):

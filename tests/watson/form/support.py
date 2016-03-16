@@ -70,6 +70,12 @@ class MultipleForm(Form):
     test = fields.Checkbox(name='checkbox[]', label='Test')
 
 
+class ValuesProvider(object):
+    @property
+    def test(self):
+        return (('Test', 1), ('Testing', 2))
+
+
 class UnprotectedForm(Form):
     test = fields.Text()
 
