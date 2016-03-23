@@ -572,6 +572,15 @@ class Select(FieldMixin):
     def render_with_label(self, **kwargs):
         return ''.join((self.label.render(self), self.render(**kwargs)))
 
+    # Options can also be referenced as values
+    @property
+    def values(self):
+        return self.options
+
+    @values.setter
+    def values(self, values):
+        self.options = values
+
     def _options_render(self):
         # internal method the render the options
         if isinstance(self.options, dict):
