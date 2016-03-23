@@ -436,9 +436,23 @@ class TestSelectField(object):
         assert field.render_with_label(
         ) == '<label for="test">My Test</label><select id="test" name="test"></select>'
 
+    def test_single_value(self):
+        field = fields.Select(
+            name='test', value=1, options=[1, 2, 3, 4], definition=False)
+        assert str(
+            field) == '<select name="test"><option value="1" selected="selected">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>'
+        field = fields.Select(
+            name='test', value='1', options=[1, 2, 3, 4], definition=False)
+        assert str(
+            field) == '<select name="test"><option value="1" selected="selected">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>'
+
     def test_multiple_values(self):
         field = fields.Select(
             name='test', value=(1, 2), options=[1, 2, 3, 4], definition=False)
+        assert str(
+            field) == '<select multiple="multiple" name="test"><option value="1" selected="selected">1</option><option value="2" selected="selected">2</option><option value="3">3</option><option value="4">4</option></select>'
+        field = fields.Select(
+            name='test', value=('1', 2), options=[1, 2, 3, 4], definition=False)
         assert str(
             field) == '<select multiple="multiple" name="test"><option value="1" selected="selected">1</option><option value="2" selected="selected">2</option><option value="3">3</option><option value="4">4</option></select>'
 

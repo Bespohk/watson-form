@@ -606,8 +606,13 @@ class Select(FieldMixin):
         if isinstance(value, (tuple, list)):
             value, label = value
         match = False
-        if value == self.value or (isinstance(self.value, (tuple, list)) and value in self.value):
+        str_value = str(value)
+        str_self_value = str(self.value)
+        if str_value == str_self_value:
             match = True
+        elif isinstance(self.value, (list, tuple)):
+            str_values = (str(val) for val in self.value)
+            match = str_value in str_values
         selected = ' selected="selected"' if match else ''
         return self.option_html.format(value, label, selected)
 
