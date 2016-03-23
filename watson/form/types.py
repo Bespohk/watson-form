@@ -412,7 +412,7 @@ class Form(TagMixin, metaclass=FormMeta):
                     except:
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
-            if hasattr(current_obj, attr):
+            if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
                 self.fields[field_name].value = getattr(current_obj, attr)
 
     def __hydrate_form_to_obj(self):
