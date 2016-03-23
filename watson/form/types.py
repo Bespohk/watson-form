@@ -401,10 +401,12 @@ class Form(TagMixin, metaclass=FormMeta):
         # should never be called externally. Triggered by bind.
         obj_mapping = self._bound_object_mapping or {}
         for field_name, field in self.fields.items():
-            attr = field_name
             current_obj = self._bound_object
+            attr = field_name
             if field_name in obj_mapping:
-                for name in obj_mapping[field_name][0:-1]:
+                attr = obj_mapping[field_name][-1]
+                fields = obj_mapping[field_name][0:-1]
+                for name in fields:
                     try:
                         current_obj = getattr(current_obj, name)
                     except:
