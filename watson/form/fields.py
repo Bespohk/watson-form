@@ -321,7 +321,7 @@ class GroupInputMixin(Input):
 
     @value.setter
     def value(self, value):
-        if self.has_multiple_elements():
+        if self.has_multiple_elements() and not isinstance(value, (list, tuple)):
             value = [value]
         self._value = value
 
