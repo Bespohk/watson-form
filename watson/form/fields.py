@@ -315,6 +315,16 @@ class GroupInputMixin(Input):
             wrap_html = '{1}'
         return wrap_html.format(self.label.text, self.render(**kwargs))
 
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        if self.has_multiple_elements():
+            value = [value]
+        self._value = value
+
     def __render_input(self, id, attributes, label_text):
         element = self.html.format(attributes)
         output = '{0}{1}'
