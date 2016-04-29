@@ -270,6 +270,9 @@ class GroupInputMixin(Input):
         except:
             self.values = [(self.label.text, values)]
 
+    def has_multiple_value(self):
+        return isinstance(self.value, (tuple, list))
+
     def has_multiple_elements(self):
         """Determine whether or not a field has multiple elements.
         """

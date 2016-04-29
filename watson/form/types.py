@@ -202,7 +202,11 @@ class Form(TagMixin, metaclass=FormMeta):
         for key in self._mapped_fields:
             if key not in self._ignored_bound_fields:
                 field = self._mapped_fields[key]
-                field.value = data.get(key, field.default_value)
+                value = data.get(key, field.default_value)
+                if hasattr(field, 'has_multiple_value') \
+                        and field.has_multiple_value():
+                    value = [value] if value else []
+                field.value = value
 
     # error methods
 
@@ -413,26 +417,37 @@ class Form(TagMixin, metaclass=FormMeta):
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
-                self.fields[field_name].value = getattr(current_obj, attr)
+                value = getattr(current_obj, attr)
+                self.fields[field_name].value = value
 
     def __hydrate_form_to_obj(self):
         # should never be called externally. Triggered by is_valid.
         obj_mapping = self._bound_object_mapping or {}
         for field_name in self.data:
+            field = self.fields[field_name]
             current_obj = self._bound_object
-            value = self.fields[field_name].value
+            value = field.value
             attr = field_name
             if field_name in obj_mapping:
+                fields = obj_mapping[field_name][0:-1]
                 attr = obj_mapping[field_name][-1]
-                for name in obj_mapping[field_name][0:-1]:
+                for name in fields:
                     try:
                         current_obj = getattr(current_obj, name)
                     except:
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
+                multiple_attr_setter = 'add_{}'.format(attr)
                 try:
-                    setattr(current_obj, attr, value or None)
+                    if hasattr(field, 'has_multiple_value')\
+                            and field.has_multiple_value()\
+                            and hasattr(current_obj, multiple_attr_setter):
+                        method = getattr(current_obj, multiple_attr_setter)
+                        for val in value:
+                            method(val)
+                    else:
+                        setattr(current_obj, attr, value or None)
                 except:  # pragma: no cover
                     # something nasty happened here, the user should manage it
                     pass
