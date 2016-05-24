@@ -205,7 +205,11 @@ class Form(TagMixin, metaclass=FormMeta):
                 value = data.get(key, field.default_value)
                 if hasattr(field, 'has_multiple_value') \
                         and field.has_multiple_value():
-                    value = [value] if value else []
+                    if value:
+                        if not isinstance(value, (tuple, list)):
+                            value = [value]
+                    else:
+                        value = []
                 field.value = value
 
     # error methods
