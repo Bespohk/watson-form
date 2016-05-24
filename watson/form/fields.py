@@ -233,7 +233,7 @@ class Input(FieldMixin):
         """
         attributes = self.attributes.copy()
         attributes.update(kwargs)
-        if self.value:
+        if self.value is not None:
             attributes['value'] = str(self.value)
 
         return self.html.format(flatten_attributes(attributes))
