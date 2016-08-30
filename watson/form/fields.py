@@ -118,7 +118,7 @@ class FieldMixin(TagMixin):
         if 'form_' in kwargs:
             self.form = kwargs['form_']
             del kwargs['form_']
-        self._errors = []
+        self.clear_errors()
         super(FieldMixin, self).__init__(**kwargs)
 
     @property
@@ -162,8 +162,11 @@ class FieldMixin(TagMixin):
             self._original_value = self.value
             self.value = _filter(self.value)
 
-    def validate(self):
+    def validate(self, form):
         """Validate the value of the field against the associated validators.
+
+        Args:
+            form (watson.form.types.Form): The parent form of the field.
 
         Returns:
             A list of errors that have occurred when the field has been
@@ -172,7 +175,7 @@ class FieldMixin(TagMixin):
         self._errors = []
         for validator in self.validators:
             try:
-                validator(self.value)
+                validator(self.value, form=form)
             except ValueError as exc:
                 self._errors.append(str(exc))
         return self._errors
@@ -180,6 +183,9 @@ class FieldMixin(TagMixin):
     @property
     def errors(self):
         return self._errors
+
+    def clear_errors(self):
+        self._errors = []
 
     @property
     def name(self):

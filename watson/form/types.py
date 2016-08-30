@@ -6,6 +6,7 @@ from watson.common.contextmanagers import suppress
 from watson.common.datastructures import MultiDict
 from watson.common.decorators import cached_property
 from watson.common.imports import get_qualified_name
+from watson.http import messages
 
 
 IGNORED_ATTRIBUTES = ('fields', 'data', 'raw_data', 'errors')
@@ -95,6 +96,8 @@ class Form(TagMixin, metaclass=FormMeta):
         """
         self._ignored_bound_fields = []
         self.validators = validators or []
+        if action and isinstance(action, messages.Request):
+            action = str(action.url)
         self._process_tag_attributes(name, method, action, kwargs)
         self._change_http_method(method)
         self._set_values_provider(values_provider)
@@ -305,7 +308,7 @@ class Form(TagMixin, metaclass=FormMeta):
             self._valid = True
             for field_name, field in self.fields.items():
                 field.filter()
-                valid = field.validate()
+                valid = field.validate(self)
                 if len(valid) > 0:
                     self._valid = False
             if self._valid:
