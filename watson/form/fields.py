@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
+import enum
 import itertools
 from watson.common.imports import get_qualified_name
 from watson.html.elements import TagMixin, flatten_attributes
@@ -260,8 +261,8 @@ class GroupInputMixin(Input):
     """
     label_position = 'left'
     wrapped = True
-    values = None
     fieldset_html = '<fieldset><legend>{0}</legend>{1}</fieldset>'
+    _values = None
 
     def __init__(self, name=None, values=None, value=None, **kwargs):
         if 'label_position' in kwargs:
@@ -276,6 +277,16 @@ class GroupInputMixin(Input):
         except:
             self.values = [(self.label.text, values)]
 
+    @property
+    def values(self):
+        if isinstance(self._values, enum.EnumMeta):
+            return [(e.name, e.value) for e in self._values]
+        return self._values
+
+    @values.setter
+    def values(self, values):
+        self._values = values
+
     def has_multiple_value(self):
         return isinstance(self.value, (tuple, list))
 
@@ -288,7 +299,8 @@ class GroupInputMixin(Input):
         multiple_elements = self.has_multiple_elements()
         elements = []
         id = self.attributes.get('id', self.name)
-        for index, label_value_pair in enumerate(self.values):
+        values = self.values
+        for index, label_value_pair in enumerate(values):
             attributes = self.attributes.copy()
             label_text, value = label_value_pair
             if multiple_elements:
@@ -540,7 +552,7 @@ class Select(FieldMixin):
     html = '<select {0}>{1}</select>'
     option_html = '<option value="{0}"{2}>{1}</option>'
     optgroup_html = '<optgroup label="{0}">{1}</optgroup>'
-    options = None
+    _options = None
 
     def __init__(self, name=None, options=None,
                  value=None, multiple=False, **kwargs):
@@ -591,6 +603,16 @@ class Select(FieldMixin):
     def render_with_label(self, **kwargs):
         return ''.join((self.label.render(self), self.render(**kwargs)))
 
+    @property
+    def options(self):
+        if isinstance(self._options, enum.EnumMeta):
+            return [(e.value, e.name) for e in self._options]
+        return self._options
+
+    @options.setter
+    def options(self, options):
+        self._options = options
+
     # Options can also be referenced as values
     @property
     def values(self):
@@ -616,9 +638,8 @@ class Select(FieldMixin):
             return self.__render_options(self.options)
 
     def __render_options(self, options):
-        return (
-            ''.join([self.__render_option(value, value) for value in options])
-        )
+        options = [self.__render_option(value, value) for value in options]
+        return (''.join(options))
 
     def __render_option(self, label, value):
         # internal method to render an individual option

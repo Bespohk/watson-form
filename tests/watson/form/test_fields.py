@@ -3,6 +3,7 @@ import collections
 from datetime import datetime
 from pytest import raises
 from watson.form import fields
+from tests.watson.form.support import TestEnum
 
 
 class TestFieldMixin(object):
@@ -326,6 +327,10 @@ class TestCheckboxInputField(object):
         assert str(
             checked_field) == '<label for="test">My Checkbox<input checked="checked" id="test" name="test" type="checkbox" value="1" /></label>'
 
+    def test_render_checkbox_enum(self):
+        field = fields.Checkbox(name='test', values=TestEnum, definition=False)
+        assert str(field) == '<label for="test_0">red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">blue<input id="test_1" name="test" type="checkbox" value="blue" /></label>'
+
     def test_render_checkbox_multiple_values(self):
         field = fields.Checkbox(
             name='test', label='My Checkbox Group',
@@ -430,6 +435,10 @@ class TestSelectField(object):
             name='test', options={'Test': 'Value'}, definition=False)
         assert str(
             field) == '<select name="test"><option value="Value">Test</option></select>'
+
+    def test_render_options_enum(self):
+        field = fields.Select(name='test', options=TestEnum, definition=False)
+        assert str(field) == '<select name="test"><option value="red">red</option><option value="blue">blue</option></select>'
 
     def test_render_with_label(self):
         field = fields.Select(name='test', label='My Test', definition=False)

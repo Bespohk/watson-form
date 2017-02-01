@@ -72,7 +72,7 @@ setup(
     long_description=readme,
 
     author='Simon Coulton',
-    author_email='simon at bespohk.com',
+    author_email='simon@bespohk.com',
 
     license=license,
     classifiers=[
@@ -83,7 +83,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: CPython',

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Support functions, classes
+import enum
 from io import BufferedReader, BytesIO
 from watson.form import Form, fields
 from watson.form.decorators import has_csrf
@@ -125,3 +126,8 @@ class User(object):
             '<User username:{0} password:{1}>'.format(
                 self.username, self.password)
         )
+
+
+class TestEnum(enum.Enum):
+    red = 'red'
+    blue = 'blue'
