@@ -315,10 +315,14 @@ class GroupInputMixin(Input):
             if value:
                 attributes['value'] = value
             value = str(value)
-            if isinstance(self.value, (list, tuple)):
-                if value in (str(val) for val in self.value):
-                    attributes['checked'] = 'checked'
+            checked = False
+            if isinstance(self.value, (list, tuple)) and value in (str(val) for val in self.value):
+                checked = True
             elif self.value and value == str(self.value):
+                checked = True
+            elif isinstance(self.value, enum.Enum) and value == self.value.value:
+                checked = True
+            if checked:
                 attributes['checked'] = 'checked'
             flat_attributes = flatten_attributes(attributes)
             element = self.__render_input(
@@ -653,6 +657,8 @@ class Select(FieldMixin):
         elif isinstance(self.value, (list, tuple)):
             str_values = (str(val) for val in self.value)
             match = str_value in str_values
+        elif isinstance(self.value, enum.Enum):
+            match = self.value.value == value
         selected = ' selected="selected"' if match else ''
         return self.option_html.format(value, label, selected)
 

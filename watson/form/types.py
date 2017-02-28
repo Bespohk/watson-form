@@ -135,8 +135,9 @@ class Form(TagMixin, metaclass=FormMeta):
                     self.attributes['enctype'] = 'multipart/form-data'
 
     def _set_values_provider(self, values_provider):
+        values_provider_fields = dir(values_provider)
         for field_name, field in self.fields.items():
-            if hasattr(values_provider, field_name):
+            if field_name in values_provider_fields:
                 field.values = getattr(values_provider, field_name)
 
     # field methods
@@ -192,6 +193,10 @@ class Form(TagMixin, metaclass=FormMeta):
         if hasattr(data, 'post'):
             raw_data = MultiDict()
             raw_data.update(data.post.items())
+            try:
+                raw_data.update(data.json_body)
+            except:
+                pass
             for key, value in data.files.items():
                 # need to do this rather than .update due to File objects
                 # being named tuples
