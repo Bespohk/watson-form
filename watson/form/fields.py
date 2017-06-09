@@ -104,23 +104,32 @@ class FieldMixin(TagMixin):
         kwargs['name'] = name
         self.value = value
         self.default_value = default_value
-        self.filters = [filters_.Trim()] + kwargs.get('filters', [])
-        self.validators = kwargs.get('validators', [])
-        if 'validators' in kwargs:
-            del kwargs['validators']
-        if 'filters' in kwargs:
-            del kwargs['filters']
+        self.filters = self.__process_filters(kwargs)
+        self.validators = self.__process_validators(kwargs)
         if '_class' in kwargs:
             kwargs['class'] = kwargs.get('_class')
             del kwargs['_class']
-        if 'required' in kwargs:
-            self.validators.append(validators.Required())
-            kwargs['required'] = 'required'
         if 'form_' in kwargs:
             self.form = kwargs['form_']
             del kwargs['form_']
         self.clear_errors()
         super(FieldMixin, self).__init__(**kwargs)
+
+    def __process_filters(self, kwargs):
+        filters = [filters_.Trim()] + kwargs.get('filters', [])
+        if 'filters' in kwargs:
+            del kwargs['filters']
+        return filters
+
+    def __process_validators(self, kwargs):
+        default_validators = []
+        if 'required' in kwargs:
+            default_validators = [validators.Required()]
+            kwargs['required'] = 'required'
+        _validators = default_validators + kwargs.get('validators', [])
+        if 'validators' in kwargs:
+            del kwargs['validators']
+        return _validators
 
     @property
     def value(self):
