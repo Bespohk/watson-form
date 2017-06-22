@@ -270,6 +270,7 @@ class GroupInputMixin(Input):
     """
     label_position = 'left'
     wrapped = True
+    uselist = True
     fieldset_html = '<fieldset><legend>{0}</legend>{1}</fieldset>'
     _values = None
 
@@ -355,7 +356,7 @@ class GroupInputMixin(Input):
 
     @value.setter
     def value(self, value):
-        if self.has_multiple_elements() and not isinstance(value, (list, tuple)):
+        if self.has_multiple_elements() and not isinstance(value, (list, tuple)) and self.uselist:
             value = [value]
         self._value = value
 
@@ -415,6 +416,8 @@ class Radio(GroupInputMixin):
 
         <label for="test"><input type="radio" name="test" values="1" />My Radio</label>
     """
+
+    uselist = False
 
     def __init__(self, name=None, values=None, value=None, **kwargs):
         """Initializes the radio.
@@ -500,9 +503,8 @@ class Button(Input):
         attributes.update(kwargs)
         if self.value:
             attributes['value'] = str(self.value)
-        return (
-            self.html.format(flatten_attributes(attributes), self.label.text)
-        )
+        label = kwargs.get('label', self.label.text)
+        return self.html.format(flatten_attributes(attributes), label)
 
     def render_with_label(self, **kwargs):
         return self.render(**kwargs)
@@ -525,13 +527,14 @@ class Submit(Input):
         super(Submit, self).__init__(name, real_value, type='submit', **kwargs)
 
     def render(self, **kwargs):
+        label = kwargs.pop('label') if 'label' in kwargs else self.label.text
         if self.button_mode:
             attributes = self.attributes.copy()
             attributes.update(kwargs)
             return (
                 self.html.format(
                     flatten_attributes(attributes),
-                    self.label.text)
+                    label)
             )
         return super(Submit, self).render()
 
@@ -599,7 +602,10 @@ class Select(FieldMixin):
                 </optgroup>
             </select>
         """
-        self.options = options or []
+        values = []
+        if 'values' in kwargs:
+            values = kwargs.pop('values')
+        self.options = options or values
         if multiple or isinstance(value, (tuple, list)):
             kwargs['multiple'] = 'multiple'
         super(Select, self).__init__(name, value, **kwargs)

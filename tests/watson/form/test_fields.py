@@ -198,6 +198,15 @@ class TestSubmitInputField(object):
         assert str(
             field_label) == '<button name="test" type="submit">My Submit</button>'
 
+    def test_render_button_mode_different_label(self):
+        field = fields.Submit(name='test', button_mode=True, definition=False)
+        assert str(field) == '<button name="test" type="submit">test</button>'
+        field_label = fields.Submit(
+            name='test',
+            button_mode=True,
+            definition=False)
+        assert field_label.render(label='My Submit') == '<button name="test" type="submit">My Submit</button>'
+
     def test_render_with_label_button_mode(self):
         field = fields.Submit(name='test', button_mode=True, definition=False)
         assert field.render_with_label(
