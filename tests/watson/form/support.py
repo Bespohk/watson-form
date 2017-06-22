@@ -137,6 +137,7 @@ class FieldTypeForm(Form):
     checkbox = fields.Checkbox(values=(('test', 1), ('testing', 2)))
     radio = fields.Radio(values=(('test', 1), ('testing', 2)))
     radio_enum = fields.Radio(values=TestEnum)
+    text = fields.Text(default_value='Test')
     select = fields.Select(values=(('test', 1), ('testing', 2)))
     select_multiple = fields.Select(
         multiple=True, values=(('test', 1), ('testing', 2)))

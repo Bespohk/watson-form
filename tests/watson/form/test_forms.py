@@ -255,5 +255,6 @@ class TestMultipleInputTypes(object):
         assert form.radio == 3
         assert form.select == 'test'
         assert form.select_multiple == ['test', 'testing']
+        assert form.text == 'Test'
         assert form.radio_enum == 'red'
         assert '<input checked="checked" id="radio_enum_0"' in str(form.fields['radio_enum'])

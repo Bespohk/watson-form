@@ -154,6 +154,7 @@ class FieldMixin(TagMixin):
     def default_value(self, value):
         if not self.value:
             self.value = value
+        self._default_value = value
 
     @property
     def original_value(self):
