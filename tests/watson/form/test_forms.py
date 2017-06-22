@@ -249,7 +249,8 @@ class TestMultipleInputTypes(object):
             'radio': 3,
             'select': 'test',
             'select_multiple': ['test', 'testing'],
-            'radio_enum': 'red'
+            'radio_enum': 'red',
+            'text': None
         }
         assert form.checkbox == [3]
         assert form.radio == 3
