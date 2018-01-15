@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__version__ = '4.1.2'
+__version__ = '4.2.0'
 
 try:
     # Fix for setup.py version import

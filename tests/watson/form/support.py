@@ -133,11 +133,22 @@ class TestEnum(enum.Enum):
     blue = 'blue'
 
 
+class FieldTypeObject(object):
+    text = None
+    radio = 'test'
+    checkbox = [1, 2]
+    checkbox_multi = None
+    radio_enum = None
+    select = {'id': 1}
+
+
 class FieldTypeForm(Form):
     checkbox = fields.Checkbox(values=(('test', 1), ('testing', 2)))
     radio = fields.Radio(values=(('test', 1), ('testing', 2)))
-    radio_enum = fields.Radio(values=TestEnum)
+    radio_enum = fields.Radio(default_value='red', values=TestEnum)
     text = fields.Text(default_value='Test')
-    select = fields.Select(values=(('test', 1), ('testing', 2)))
+    checkbox_multi = fields.Checkbox(default_value=[1], values=(('test', 1), ('testing', 2)))
+    select = fields.Select(
+        values=(('test', 1), ('testing', 2)))
     select_multiple = fields.Select(
         multiple=True, values=(('test', 1), ('testing', 2)))

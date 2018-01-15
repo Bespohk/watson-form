@@ -211,8 +211,6 @@ class Form(TagMixin, metaclass=FormMeta):
             if key not in self._ignored_bound_fields:
                 field = self._mapped_fields[key]
                 value = data.get(key)
-                if value is None and field.default_value and field.default_value is not None:
-                    value = field.default_value
                 if hasattr(field, 'has_multiple_value') \
                         and field.has_multiple_value():
                     if value:

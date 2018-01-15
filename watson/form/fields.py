@@ -5,6 +5,7 @@ import itertools
 from watson.common.imports import get_qualified_name
 from watson.html.elements import TagMixin, flatten_attributes
 from watson import validators, filters as filters_
+from watson.form.validators import SuppliedValues
 
 
 class Definition(object):
@@ -144,6 +145,8 @@ class FieldMixin(TagMixin):
     def value(self, value):
         """Convenience method to set the value on the field.
         """
+        if value is None and self.default_value and self.default_value is not None:
+            value = self.default_value
         self._value = value
 
     @property
@@ -152,8 +155,6 @@ class FieldMixin(TagMixin):
 
     @default_value.setter
     def default_value(self, value):
-        if not self.value:
-            self.value = value
         self._default_value = value
 
     @property
@@ -186,7 +187,7 @@ class FieldMixin(TagMixin):
         self._errors = []
         for validator in self.validators:
             try:
-                validator(self.value, form=form)
+                validator(self.value, form=form, field=self)
             except ValueError as exc:
                 self._errors.append(str(exc))
         return self._errors
@@ -296,7 +297,17 @@ class GroupInputMixin(Input):
 
     @values.setter
     def values(self, values):
+        should_include_values_validator = True
+        for validator in self.validators:
+            if isinstance(validator, SuppliedValues):
+                should_include_values_validator = False
+        if should_include_values_validator:
+            self.validators.append(SuppliedValues())
         self._values = values
+
+    @property
+    def actual_values(self):
+        return [value[1] for value in self.values]
 
     def has_multiple_value(self):
         return isinstance(self.value, (tuple, list))
@@ -357,6 +368,8 @@ class GroupInputMixin(Input):
 
     @value.setter
     def value(self, value):
+        if value is None and self.default_value and self.default_value is not None:
+            value = self.default_value
         if self.has_multiple_elements() and not isinstance(value, (list, tuple)) and self.uselist:
             value = [value]
         self._value = value
@@ -606,10 +619,10 @@ class Select(FieldMixin):
         values = []
         if 'values' in kwargs:
             values = kwargs.pop('values')
-        self.options = options or values
         if multiple or isinstance(value, (tuple, list)):
             kwargs['multiple'] = 'multiple'
         super(Select, self).__init__(name, value, **kwargs)
+        self.options = options or values
 
     def render(self, **kwargs):
         attributes = self.attributes.copy()
@@ -631,7 +644,19 @@ class Select(FieldMixin):
 
     @options.setter
     def options(self, options):
+        should_include_values_validator = True
+        for validator in self.validators:
+            if isinstance(validator, SuppliedValues):
+                should_include_values_validator = False
+        if should_include_values_validator:
+            self.validators.append(SuppliedValues())
         self._options = options
+
+    @property
+    def actual_values(self):
+        if isinstance(self.values, dict):
+            return [value for key, value in self.values.items()]
+        return [value[0] if isinstance(value, (list, tuple)) else value for value in self.values]
 
     # Options can also be referenced as values
     @property

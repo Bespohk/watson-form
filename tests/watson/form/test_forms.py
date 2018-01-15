@@ -7,7 +7,8 @@ from tests.watson.form.support import (LoginForm, UploadForm, User, MultipleForm
                                        form_user_mapping, Contact, Other,
                                        sample_environ, ProtectedForm,
                                        SampleFormValidator, environ_with_file,
-                                       ValuesProvider, FieldTypeForm)
+                                       ValuesProvider, FieldTypeForm,
+                                       FieldTypeObject)
 
 
 class TestForm(object):
@@ -259,3 +260,15 @@ class TestMultipleInputTypes(object):
         assert form.text == 'Test'
         assert form.radio_enum == 'red'
         assert '<input checked="checked" id="radio_enum_0"' in str(form.fields['radio_enum'])
+
+
+class TestMultipleInputTypesBind(object):
+
+    def test_value_types(self):
+        form = FieldTypeForm()
+        form.bind(FieldTypeObject())
+        assert form.text == 'Test'
+        assert form.radio == 'test'
+        assert form.checkbox == [1, 2]
+        assert form.checkbox_multi == [1]
+        assert form.radio_enum == 'red'

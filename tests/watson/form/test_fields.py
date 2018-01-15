@@ -355,6 +355,17 @@ class TestCheckboxInputField(object):
             values=(('test', 1), ('testing', 2)), definition=False)
         assert str(field) == '<label for="test_0">test<input id="test_0" name="test[]" type="checkbox" value="1" /></label><label for="test_1">testing<input id="test_1" name="test[]" type="checkbox" value="2" /></label>'
 
+    def test_requires_values_validator(self):
+        field = fields.Checkbox(
+            name='test',
+            values=(('test', 1), ('testing', 2)), definition=False)
+        field.value = 3
+        field.validate(None)
+        assert len(field.errors) == 1
+        field.value = 2
+        field.validate(None)
+        assert len(field.errors) == 0
+
 
 class TestHiddenInputField(object):
 
@@ -492,3 +503,26 @@ class TestSelectField(object):
             definition=False)
         assert str(
             field_with_key_value) == '<select name="test"><optgroup label="Group One"><option value="1">Test</option><option value="2">Testing</option></optgroup><optgroup label="Group Two"><option value="3">3</option><option value="4">4</option></optgroup></select>'
+
+    def test_requires_values_validator(self):
+        field = fields.Select(
+            name='test',
+            options=[1, 2, 3, 4], definition=False)
+        field.value = 5
+        field.validate(None)
+        assert len(field.errors) == 1
+        field.value = 2
+        field.validate(None)
+        assert len(field.errors) == 0
+
+    def test_requires_multiple_values_validator(self):
+        field = fields.Select(name='test', options=[1, 2, 3, 4], definition=False, multiple=True)
+        field.value = 4
+        field.validate(None)
+        assert len(field.errors) == 0
+        field.value = [2, 4]
+        field.validate(None)
+        assert len(field.errors) == 0
+        field.value = [2, 5]
+        field.validate(None)
+        assert len(field.errors) == 1
