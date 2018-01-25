@@ -82,6 +82,7 @@ class Form(TagMixin, metaclass=FormMeta):
     _bound_object = None
     _bound_object_mapping = None
     _validated = False
+    values_provider = None
 
     def __init__(self, name=None, method='post',
                  action=None, detect_multipart=True, validators=None,
@@ -135,6 +136,7 @@ class Form(TagMixin, metaclass=FormMeta):
                     self.attributes['enctype'] = 'multipart/form-data'
 
     def _set_values_provider(self, values_provider):
+        self.values_provider = values_provider
         values_provider_fields = dir(values_provider)
         for field_name, field in self.fields.items():
             if field_name in values_provider_fields:
@@ -146,7 +148,7 @@ class Form(TagMixin, metaclass=FormMeta):
     def fields(self):
         self._mapped_fields = {}
         fields = collections.OrderedDict()
-        for field_name, field in self._defined_fields.items():
+        for field_name, field in self.defined_fields.items():
             instance = field.generate_instance(self)
             setattr(self.__class__, field_name, FieldDescriptor(field_name))
             if not instance.name:
@@ -210,6 +212,8 @@ class Form(TagMixin, metaclass=FormMeta):
         for key in self._mapped_fields:
             if key not in self._ignored_bound_fields:
                 field = self._mapped_fields[key]
+                real_key = {f: name for name, f in self.fields.items()}.get(
+                    field)
                 value = data.get(key)
                 if hasattr(field, 'has_multiple_value') \
                         and field.has_multiple_value():
@@ -218,7 +222,7 @@ class Form(TagMixin, metaclass=FormMeta):
                             value = [value]
                     else:
                         value = []
-                field.value = value
+                setattr(self, real_key, value)
 
     # error methods
 
@@ -417,7 +421,7 @@ class Form(TagMixin, metaclass=FormMeta):
         # should never be called externally. Triggered by bind.
         obj_mapping = self._bound_object_mapping or {}
         for field_name, field in self.fields.items():
-            current_obj = self._bound_object
+            current_obj = self.bound_object
             attr = field_name
             if field_name in obj_mapping:
                 attr = obj_mapping[field_name][-1]
@@ -430,14 +434,15 @@ class Form(TagMixin, metaclass=FormMeta):
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
                 value = getattr(current_obj, attr)
-                self.fields[field_name].value = value
+                setattr(self, field_name, value)
+                # self.fields[field_name].value = value
 
     def __hydrate_form_to_obj(self):
         # should never be called externally. Triggered by is_valid.
         obj_mapping = self._bound_object_mapping or {}
         for field_name in self.data:
             field = self.fields[field_name]
-            current_obj = self._bound_object
+            current_obj = self.bound_object
             value = field.value
             attr = field_name
             if field_name in obj_mapping:
@@ -450,7 +455,7 @@ class Form(TagMixin, metaclass=FormMeta):
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
-                multiple_attr_setter = 'add_{}'.format(attr)
+                multiple_attr_setter = 'set_{}'.format(attr)
                 try:
                     if hasattr(field, 'has_multiple_value')\
                             and field.has_multiple_value()\
@@ -458,8 +463,11 @@ class Form(TagMixin, metaclass=FormMeta):
                         method = getattr(current_obj, multiple_attr_setter)
                         for val in value:
                             method(val)
-                    else:
-                        setattr(current_obj, attr, value or None)
+                        continue
+                    if self.values_provider and hasattr(self.values_provider, multiple_attr_setter):
+                        method = getattr(self.values_provider, multiple_attr_setter)
+                        value = method(value)
+                    setattr(current_obj, attr, value or None)
                 except:  # pragma: no cover
                     # something nasty happened here, the user should manage it
                     pass

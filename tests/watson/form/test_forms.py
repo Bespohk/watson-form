@@ -8,7 +8,9 @@ from tests.watson.form.support import (LoginForm, UploadForm, User, MultipleForm
                                        sample_environ, ProtectedForm,
                                        SampleFormValidator, environ_with_file,
                                        ValuesProvider, FieldTypeForm,
-                                       FieldTypeObject)
+                                       FieldTypeObject, ComplexValuesProvider,
+                                       ComplexParent, ComplexForm,
+                                       ComplexChild)
 
 
 class TestForm(object):
@@ -32,6 +34,13 @@ class TestForm(object):
         login_form = LoginForm()
         assert login_form.name == 'LoginForm'
 
+    def test_field_access(self):
+        form = LoginForm()
+        form.open()
+        assert not isinstance(form.username, str)
+        form.close()
+        assert not form.username
+
     def test_form_start_tag(self):
         form = Form('test')
         assert form.open(
@@ -42,7 +51,9 @@ class TestForm(object):
         assert form.close() == '</form>'
 
     def test_set_data_on_form(self):
-        form = LoginForm('test')
+        environ = environ_with_file()
+        request = Request.from_environ(environ)
+        form = LoginForm('test', action=request)
         post_data = {
             'username': 'simon',
             'password': 'test',
@@ -50,9 +61,8 @@ class TestForm(object):
             'last_name': None,
             'email': None}
         form.data = post_data
+        assert form.action == 'http://127.0.0.1/'
         assert form.data == post_data
-        environ = environ_with_file()
-        request = Request.from_environ(environ)
         form.data = request
         assert form.data['first_name'] == '1234'
 
@@ -192,9 +202,25 @@ class TestForm(object):
         form.data = request
         assert form.test == ['1', '2']
 
+
+class TestValuesProvider(object):
     def test_values_provider(self):
         form = MultipleForm('test', values_provider=ValuesProvider())
         assert len(form.fields['test'].values) == 2
+
+    def test_set_data_from_values_provider(self):
+        provider = ComplexValuesProvider()
+        form = ComplexForm(values_provider=provider)
+        model = ComplexParent()
+        form.bind(model)
+        supplied_data = {
+            'children': [1]
+        }
+        form.data = supplied_data
+        form.is_valid()
+        assert len(model.children)
+        assert isinstance(model.children[0], ComplexChild)
+        assert model.children[0].id == 1
 
 
 class TestMultiPartForm(object):

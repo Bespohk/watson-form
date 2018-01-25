@@ -3,7 +3,7 @@ import collections
 from datetime import datetime
 from pytest import raises
 from watson.form import fields
-from tests.watson.form.support import TestEnum
+from tests.watson.form.support import SampleEnum
 
 
 class TestFieldMixin(object):
@@ -337,9 +337,9 @@ class TestCheckboxInputField(object):
             checked_field) == '<label for="test">My Checkbox<input checked="checked" id="test" name="test" type="checkbox" value="1" /></label>'
 
     def test_render_checkbox_enum(self):
-        field = fields.Checkbox(name='test', values=TestEnum, definition=False)
+        field = fields.Checkbox(name='test', values=SampleEnum, definition=False)
         assert str(field) == '<label for="test_0">red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">blue<input id="test_1" name="test" type="checkbox" value="blue" /></label>'
-        field = fields.Checkbox(name='test', values=TestEnum, value=TestEnum.blue, definition=False)
+        field = fields.Checkbox(name='test', values=SampleEnum, value=SampleEnum.blue, definition=False)
         assert str(field) == '<label for="test_0">red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">blue<input checked="checked" id="test_1" name="test" type="checkbox" value="blue" /></label>'
 
     def test_render_checkbox_multiple_values(self):
@@ -459,9 +459,9 @@ class TestSelectField(object):
             field) == '<select name="test"><option value="Value">Test</option></select>'
 
     def test_render_options_enum(self):
-        field = fields.Select(name='test', options=TestEnum, definition=False)
+        field = fields.Select(name='test', options=SampleEnum, definition=False)
         assert str(field) == '<select name="test"><option value="red">red</option><option value="blue">blue</option></select>'
-        field = fields.Select(name='test', options=TestEnum, value=TestEnum.blue, definition=False)
+        field = fields.Select(name='test', options=SampleEnum, value=SampleEnum.blue, definition=False)
         assert str(field) == '<select name="test"><option value="red">red</option><option value="blue" selected="selected">blue</option></select>'
 
     def test_render_with_label(self):

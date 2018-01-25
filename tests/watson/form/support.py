@@ -44,6 +44,7 @@ Add\x20
     environ['wsgi.input'] = fp
     return environ
 
+
 form_user_mapping = {
     'first_name': (
         'personal',
@@ -75,6 +76,39 @@ class ValuesProvider(object):
     @property
     def test(self):
         return (('Test', 1), ('Testing', 2))
+
+
+class ComplexParent(object):
+    children = None
+
+    def __init__(self):
+        self.children = []
+
+
+class ComplexChild(object):
+
+    def __init__(self, id, value):
+        self.id = id
+        self.value = value
+
+    id = None
+    value = None
+
+
+class ComplexForm(Form):
+    children = fields.Checkbox()
+
+
+class ComplexValuesProvider(object):
+
+    items = [ComplexChild(1, 'Test'), ComplexChild(2, 'Testing')]
+
+    @property
+    def children(self):
+        return [(item.value, item.id) for item in self.items]
+
+    def set_children(self, value):
+        return [item for item in self.items if value and item.id in value]
 
 
 class UnprotectedForm(Form):
@@ -128,7 +162,7 @@ class User(object):
         )
 
 
-class TestEnum(enum.Enum):
+class SampleEnum(enum.Enum):
     red = 'red'
     blue = 'blue'
 
@@ -145,7 +179,7 @@ class FieldTypeObject(object):
 class FieldTypeForm(Form):
     checkbox = fields.Checkbox(values=(('test', 1), ('testing', 2)))
     radio = fields.Radio(values=(('test', 1), ('testing', 2)))
-    radio_enum = fields.Radio(default_value='red', values=TestEnum)
+    radio_enum = fields.Radio(default_value='red', values=SampleEnum)
     text = fields.Text(default_value='Test')
     checkbox_multi = fields.Checkbox(default_value=[1], values=(('test', 1), ('testing', 2)))
     select = fields.Select(

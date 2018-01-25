@@ -274,6 +274,88 @@ Errors upon validating
 
 When is_valid() is called, all fields will be filtered and validated, and any subsequent error messages will be available via form.errors.
 
+Providing forms with initial data from another source
+-----------------------------------------------------
+
+Sometimes you'll need to populate the form fields with data from a database, in order to do these, we'll take advantage of Value Providers.
+Value Providers are just standard Python classes which have attributes and methods that allow you to manipulate data. Lets take Users and associated Roles as an example:
+
+.. note::
+    This assumes that you've already handled the authentication process and you're utilising dependency injection techniques. Some pseudo-code is involved with certain method calls and variables.
+
+.. code-block:: python
+
+    from watson.framework import controllers
+    from watson.forms import Form, fields
+
+
+    class UserRepository(object):
+        def get_roles(self):
+            return [... query to get roles]
+
+
+    class User(object):
+        username = None
+        roles = None
+
+
+    class Role(object):
+        key = None
+        name = None
+
+
+    class UserForm(Form):
+        username = fields.Text(required=True)
+        roles = fields.Checkbox(required=True)
+
+
+    class UserValuesProvider(object):
+
+        repository = None  # should be an injected UserRepository
+
+        @property
+        def roles(self):
+            return [(role.name, role.key) for role in self.repository.get_roles()]
+
+        def set_roles(self, value):
+            return [role for role in self.repository.get_roles() if value and role.id in value]
+
+
+
+    class UserController(controllers.Rest):
+
+        user_values_provider = None  # should be and injected UserValuesProvider
+
+        def GET(self):
+            form = UserForm(action=self.request)
+            return {
+                'form': form
+            }
+
+        def POST(self):
+            form = UserForm(values_provider=self.user_values_provider)
+            form.bind(self.request.user)
+            form.data = request
+            if form.is_valid():
+                self.repository.save(self.request.user)
+                # set a flash message to alert the user it was updated
+            else:
+                pass  # set a flash message to alert the user it failed
+            # do redirect back to GET
+
+
+So what does the above code do exactly? Lets take a look from the top:
+
+1. Define the models associated with User and Role, along with a UserRepository that will be used to retrieve that information.
+2. Define the UserForm which has two required fields that need to be sent through.
+3. Define the UserValuesProvider with a @property named roles (matching the field on the UserForm) and a set method (matching the field on the UserForm, prefixed with set_)
+4. Define a UserController with the relevant GET and POST methods to handle incoming HTTP requests.
+
+When a user makes a GET request to the UserController and prints the form out to the page, the UserValuesProvider will set UserForm.roles to a list of tuples suitable for being rendered to HTML.
+
+When a request comes in and is processed by the POST method on the UserController and the form is validated, the UserForm will call the set_roles method with a list of Role.key values. These will automatically be validated to ensure they are valid (see watson.forms.validators.SuppliedValues). Assuming they do pass, then the set_roles method will convert the supplied Role.key values into actual Role objects which can then be saved.
+
+
 Protecting against CSRF (Cross site request forgery)
 ----------------------------------------------------
 

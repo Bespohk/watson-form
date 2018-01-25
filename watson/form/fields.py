@@ -86,6 +86,7 @@ class FieldMixin(TagMixin):
     _value = None
     _default_value = None
     _original_value = None
+    form = None
 
     def __new__(cls, definition=True, *args, **kwargs):
         if definition:
