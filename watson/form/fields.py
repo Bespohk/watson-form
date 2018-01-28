@@ -293,7 +293,7 @@ class GroupInputMixin(Input):
     @property
     def values(self):
         if isinstance(self._values, enum.EnumMeta):
-            return [(e.name, e.value) for e in self._values]
+            return [(e.value, e.name) for e in self._values]
         return self._values
 
     @values.setter
@@ -343,7 +343,7 @@ class GroupInputMixin(Input):
                 checked = True
             elif self.value and value == str(self.value):
                 checked = True
-            elif isinstance(self.value, enum.Enum) and value == self.value.value:
+            elif isinstance(self.value, enum.Enum) and value == self.value.name:
                 checked = True
             if checked:
                 attributes['checked'] = 'checked'
@@ -640,7 +640,7 @@ class Select(FieldMixin):
     @property
     def options(self):
         if isinstance(self._options, enum.EnumMeta):
-            return [(e.value, e.name) for e in self._options]
+            return [(e.name, e.value) for e in self._options]
         return self._options
 
     @options.setter
@@ -700,7 +700,7 @@ class Select(FieldMixin):
             str_values = (str(val) for val in self.value)
             match = str_value in str_values
         elif isinstance(self.value, enum.Enum):
-            match = self.value.value == value
+            match = self.value.name == value
         selected = ' selected="selected"' if match else ''
         return self.option_html.format(value, label, selected)
 

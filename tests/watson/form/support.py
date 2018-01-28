@@ -163,8 +163,8 @@ class User(object):
 
 
 class SampleEnum(enum.Enum):
-    red = 'red'
-    blue = 'blue'
+    red = 'Red'
+    blue = 'Blue'
 
 
 class FieldTypeObject(object):

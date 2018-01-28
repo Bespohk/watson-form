@@ -338,9 +338,10 @@ class TestCheckboxInputField(object):
 
     def test_render_checkbox_enum(self):
         field = fields.Checkbox(name='test', values=SampleEnum, definition=False)
-        assert str(field) == '<label for="test_0">red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">blue<input id="test_1" name="test" type="checkbox" value="blue" /></label>'
+        assert str(field) == '<label for="test_0">Red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">Blue<input id="test_1" name="test" type="checkbox" value="blue" /></label>'
         field = fields.Checkbox(name='test', values=SampleEnum, value=SampleEnum.blue, definition=False)
-        assert str(field) == '<label for="test_0">red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">blue<input checked="checked" id="test_1" name="test" type="checkbox" value="blue" /></label>'
+        print(str(field))
+        assert str(field) == '<label for="test_0">Red<input id="test_0" name="test" type="checkbox" value="red" /></label><label for="test_1">Blue<input checked="checked" id="test_1" name="test" type="checkbox" value="blue" /></label>'
 
     def test_render_checkbox_multiple_values(self):
         field = fields.Checkbox(
@@ -460,9 +461,9 @@ class TestSelectField(object):
 
     def test_render_options_enum(self):
         field = fields.Select(name='test', options=SampleEnum, definition=False)
-        assert str(field) == '<select name="test"><option value="red">red</option><option value="blue">blue</option></select>'
+        assert str(field) == '<select name="test"><option value="red">Red</option><option value="blue">Blue</option></select>'
         field = fields.Select(name='test', options=SampleEnum, value=SampleEnum.blue, definition=False)
-        assert str(field) == '<select name="test"><option value="red">red</option><option value="blue" selected="selected">blue</option></select>'
+        assert str(field) == '<select name="test"><option value="red">Red</option><option value="blue" selected="selected">Blue</option></select>'
 
     def test_render_with_label(self):
         field = fields.Select(name='test', label='My Test', definition=False)
