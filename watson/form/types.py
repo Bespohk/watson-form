@@ -41,7 +41,7 @@ class FormMeta(type):
     def __init__(cls, name, bases, attrs):
         fields = []
         for field_name in dir(cls):
-            if (not field_name.startswith('_') and
+            if (not field_name.startswith('_') and  # noqa
                     field_name not in IGNORED_ATTRIBUTES):
                 field = getattr(cls, field_name)
                 if isinstance(field, Definition):
@@ -197,7 +197,7 @@ class Form(TagMixin, metaclass=FormMeta):
             raw_data.update(data.post.items())
             try:
                 raw_data.update(data.json_body)
-            except:
+            except Exception:
                 pass
             for key, value in data.files.items():
                 # need to do this rather than .update due to File objects
@@ -429,7 +429,7 @@ class Form(TagMixin, metaclass=FormMeta):
                 for name in fields:
                     try:
                         current_obj = getattr(current_obj, name)
-                    except:
+                    except Exception:
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
@@ -451,7 +451,7 @@ class Form(TagMixin, metaclass=FormMeta):
                 for name in fields:
                     try:
                         current_obj = getattr(current_obj, name)
-                    except:
+                    except Exception:
                         raise AttributeError(
                             'Mapping for object does not match object structure.')
             if hasattr(current_obj, attr) and attr not in self._ignored_bound_fields:
@@ -468,7 +468,7 @@ class Form(TagMixin, metaclass=FormMeta):
                         method = getattr(self.values_provider, multiple_attr_setter)
                         value = method(value)
                     setattr(current_obj, attr, value or None)
-                except:  # pragma: no cover
+                except:  # noqa, pragma: no cover
                     # something nasty happened here, the user should manage it
                     pass
 

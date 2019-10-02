@@ -287,7 +287,7 @@ class GroupInputMixin(Input):
         try:
             iter(values)
             self.values = values
-        except:
+        except Exception:
             self.values = [(self.label.text, values)]
 
     @property
