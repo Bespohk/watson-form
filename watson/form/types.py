@@ -214,7 +214,7 @@ class Form(TagMixin, metaclass=FormMeta):
                 field = self._mapped_fields[key]
                 real_key = {f: name for name, f in self.fields.items()}.get(
                     field)
-                value = data.get(key)
+                value = data.get(key, data.get(real_key))
                 if hasattr(field, 'has_multiple_value') \
                         and field.has_multiple_value():
                     if value:
